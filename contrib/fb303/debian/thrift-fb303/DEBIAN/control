@@ -1,0 +1,9 @@
+Package: thrift-fb303
+Version: 0.1
+Section: unknown
+Priority: extra
+Architecture: amd64
+Installed-Size: 808
+Maintainer: goffinet <goffinet@digg.com>
+Description: Facebook's contrib fb303 library
+ A standard interface to monitoring, dynamic options and configuration, uptime reports, activity, etc.
