@@ -52,7 +52,11 @@ class t_py_generator : public t_generator {
     iter = parsed_options.find("twisted");
     gen_twisted_ = (iter != parsed_options.end());
 
-    out_dir_base_ = "gen-py";
+    if (gen_twisted_){
+      out_dir_base_ = "gen-py.twisted";
+    } else {
+      out_dir_base_ = "gen-py";
+    }
   }
 
   /**
@@ -350,12 +354,17 @@ void t_py_generator::generate_typedef(t_typedef* ttypedef) {}
  * @param tenum The enumeration
  */
 void t_py_generator::generate_enum(t_enum* tenum) {
+  std::ostringstream to_string_mapping, from_string_mapping;
+
   f_types_ <<
     "class " << tenum->get_name() <<
     (gen_newstyle_ ? "(object)" : "") <<
     ":" << endl;
   indent_up();
   generate_python_docstring(f_types_, tenum);
+
+  to_string_mapping << indent() << "_VALUES_TO_NAMES = {" << endl;
+  from_string_mapping << indent() << "_NAMES_TO_VALUES = {" << endl;
 
   vector<t_enum_value*> constants = tenum->get_constants();
   vector<t_enum_value*>::iterator c_iter;
@@ -369,10 +378,21 @@ void t_py_generator::generate_enum(t_enum* tenum) {
 
     f_types_ <<
       indent() << (*c_iter)->get_name() << " = " << value << endl;
+
+    // Dictionaries to/from string names of enums
+    to_string_mapping <<
+      indent() << indent() << value << ": \"" <<
+      escape_string((*c_iter)->get_name()) << "\"," << endl;
+    from_string_mapping <<
+      indent() << indent() << '"' << escape_string((*c_iter)->get_name()) <<
+      "\": " << value << ',' << endl;
   }
+  to_string_mapping << indent() << "}" << endl;
+  from_string_mapping << indent() << "}" << endl;
 
   indent_down();
   f_types_ << endl;
+  f_types_ << to_string_mapping.str() << endl << from_string_mapping.str() << endl;
 }
 
 /**
@@ -531,6 +551,7 @@ void t_py_generator::generate_py_struct_definition(ofstream& out,
                                                    bool is_result) {
 
   const vector<t_field*>& members = tstruct->get_members();
+  const vector<t_field*>& sorted_members = tstruct->get_sorted_members();
   vector<t_field*>::const_iterator m_iter;
 
   out <<
@@ -571,12 +592,12 @@ void t_py_generator::generate_py_struct_definition(ofstream& out,
   // for structures with no members.
   // TODO(dreiss): Test encoding of structs where some inner structs
   // don't have thrift_spec.
-  if (members.empty() || (members[0]->get_key() >= 0)) {
+  if (sorted_members.empty() || (sorted_members[0]->get_key() >= 0)) {
     indent(out) << "thrift_spec = (" << endl;
     indent_up();
 
     int sorted_keys_pos = 0;
-    for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
+    for (m_iter = sorted_members.begin(); m_iter != sorted_members.end(); ++m_iter) {
 
       for (; sorted_keys_pos != (*m_iter)->get_key(); sorted_keys_pos++) {
         indent(out) << "None, # " << sorted_keys_pos << endl;
@@ -635,6 +656,16 @@ void t_py_generator::generate_py_struct_definition(ofstream& out,
 
   generate_py_struct_reader(out, tstruct);
   generate_py_struct_writer(out, tstruct);
+
+  // For exceptions only, generate a __str__ method. This is
+  // because when raised exceptions are printed to the console, __repr__
+  // isn't used. See python bug #5882
+  if (is_exception) {
+    out <<
+      indent() << "def __str__(self):" << endl <<
+      indent() << "  return repr(self)" << endl <<
+      endl;
+  }
 
   // Printing utilities so that on the command line thrift
   // structs look pretty like dictionaries
@@ -911,6 +942,8 @@ void t_py_generator::generate_service_interface(t_service* tservice) {
   } else {
     if (gen_twisted_) {
       extends_if = "(Interface)";
+    } else if (gen_newstyle_) {
+      extends_if = "(object)";
     }
   }
 

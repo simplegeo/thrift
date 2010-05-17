@@ -17,7 +17,8 @@
  * under the License.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
+#import "TProtocol.h"
 
 
 @protocol TProcessor <NSObject>

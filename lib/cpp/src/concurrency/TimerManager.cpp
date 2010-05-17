@@ -29,9 +29,6 @@ namespace apache { namespace thrift { namespace concurrency {
 
 using boost::shared_ptr;
 
-typedef std::multimap<int64_t, shared_ptr<TimerManager::Task> >::iterator task_iterator;
-typedef std::pair<task_iterator, task_iterator> task_range;
-
 /**
  * TimerManager class
  *
@@ -211,9 +208,7 @@ void TimerManager::stop() {
 
   if (doStop) {
     // Clean up any outstanding tasks
-    for (task_iterator ix =  taskMap_.begin(); ix != taskMap_.end(); ix++) {
-      taskMap_.erase(ix);
-    }
+    taskMap_.clear();
 
     // Remove dispatcher's reference to us.
     dispatcher_->manager_ = NULL;
@@ -244,13 +239,18 @@ void TimerManager::add(shared_ptr<Runnable> task, int64_t timeout) {
       throw IllegalStateException();
     }
 
+    // If the task map is empty, we will kick the dispatcher for sure. Otherwise, we kick him
+    // if the expiration time is shorter than the current value. Need to test before we insert,
+    // because the new task might insert at the front.
+    bool notifyRequired = (taskCount_ == 0) ? true : timeout < taskMap_.begin()->first;
+
     taskCount_++;
     taskMap_.insert(std::pair<int64_t, shared_ptr<Task> >(timeout, shared_ptr<Task>(new Task(task))));
 
     // If the task map was empty, or if we have an expiration that is earlier
     // than any previously seen, kick the dispatcher so it can update its
     // timeout
-    if (taskCount_ == 1 || timeout < taskMap_.begin()->first) {
+    if (notifyRequired) {
       monitor_.notify();
     }
   }

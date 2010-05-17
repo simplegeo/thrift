@@ -24,6 +24,7 @@
 #include <concurrency/Util.h>
 
 #include <assert.h>
+#include <unistd.h>
 #include <iostream>
 #include <set>
 
@@ -141,10 +142,6 @@ public:
         while (*activeCount > 0) {
           monitor->wait(1000);
         }
-      }
-
-      for (std::set<shared_ptr<Thread> >::const_iterator thread = threads.begin(); thread != threads.end(); thread++) {
-        threads.erase(*thread);
       }
 
       std::cout << "\t\t\treaped " << lix * count << " threads" << std::endl;

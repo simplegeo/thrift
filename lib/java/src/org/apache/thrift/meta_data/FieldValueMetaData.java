@@ -27,15 +27,15 @@ import org.apache.thrift.protocol.TType;
  */
 public class FieldValueMetaData implements java.io.Serializable {
   public final byte type;  
- 
+
   public FieldValueMetaData(byte type){
     this.type = type;
   }
-  
+
   public boolean isStruct() {
     return type == TType.STRUCT; 
   }
-  
+
   public boolean isContainer() {
     return type == TType.LIST || type == TType.MAP || type == TType.SET;
   }

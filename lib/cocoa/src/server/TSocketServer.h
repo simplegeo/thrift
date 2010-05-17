@@ -17,9 +17,19 @@
  * under the License.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 #import "TProtocolFactory.h"
-#import "TProcessor.h"
+#import "TProcessorFactory.h"
+
+#if !TARGET_OS_IPHONE
+#import <CoreServices/CoreServices.h>
+#else
+#import <CFNetwork/CFNetwork.h>
+#endif
+
+extern NSString * const kTSocketServer_ClientConnectionFinishedForProcessorNotification;
+extern NSString * const kTSocketServer_ProcessorKey;
+extern NSString * const kTSockerServer_TransportKey;
 
 
 @interface TSocketServer : NSObject {
@@ -27,12 +37,12 @@
   NSFileHandle * mSocketFileHandle;
   id <TProtocolFactory> mInputProtocolFactory;
   id <TProtocolFactory> mOutputProtocolFactory;
-  id <TProcessor> mProcessor;
+  id <TProcessorFactory> mProcessorFactory;
 }
 
 - (id) initWithPort: (int) port
     protocolFactory: (id <TProtocolFactory>) protocolFactory
-          processor: (id <TProcessor>) processor;
+   processorFactory: (id <TProcessorFactory>) processorFactory;
 
 @end
 

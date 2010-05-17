@@ -15,6 +15,10 @@
  * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
+ * Contains some contributions under the Thrift Software License.
+ * Please see doc/old-thrift-license.txt in the Thrift distribution for
+ * details.
  */
 
 #include <string>
@@ -218,7 +222,7 @@ void t_rb_generator::init_generator() {
 
   f_consts_ <<
     rb_autogen_comment() << endl <<
-    "require File.dirname(__FILE__) + '/" << underscore(program_name_) << "_types'" << endl <<
+    "require '" << underscore(program_name_) << "_types'" << endl <<
     endl;
     begin_namespace(f_consts_, ruby_modules(program_));
 
@@ -299,9 +303,26 @@ void t_rb_generator::generate_enum(t_enum* tenum) {
       indent() << name << " = " << value << endl;
   }
   
+  //Create a hash mapping values back to their names (as strings) since ruby has no native enum type
+  indent(f_types_) << "VALUE_MAP = {";
+  bool first = true;
+  value = -1;
+  for(c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
+    //Populate the hash
+    //If no value is given, use the next available one
+    if ((*c_iter)->has_value())
+      value = (*c_iter)->get_value();
+    else ++value;
+    
+    first ? first = false : f_types_ << ", ";
+    f_types_ << value << " => \"" << capitalize((*c_iter)->get_name()) << "\"";
+    
+  }
+  f_types_ << "}" << endl;
+  
   // Create a set with valid values for this enum
   indent(f_types_) << "VALID_VALUES = Set.new([";
-  bool first = true;
+  first = true;
   for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
     // Populate the set
     first ? first = false: f_types_ << ", ";
@@ -364,7 +385,7 @@ string t_rb_generator::render_const_value(t_type* type, t_const_value* value) {
   } else if (type->is_enum()) {
     indent(out) << value->get_integer();
   } else if (type->is_struct() || type->is_xception()) {
-    out << type->get_name() << ".new({" << endl;
+    out << full_type_name(type) << ".new({" << endl;
     indent_up();
     const vector<t_field*>& fields = ((t_struct*)type)->get_members();
     vector<t_field*>::const_iterator f_iter;
@@ -412,7 +433,7 @@ string t_rb_generator::render_const_value(t_type* type, t_const_value* value) {
       etype = ((t_set*)type)->get_elem_type();
     }
     if (type->is_set()) {
-      out << "Set.new([";
+      out << "Set.new([" << endl;
     } else {
       out << "[" << endl;
     }
@@ -635,7 +656,7 @@ void t_rb_generator::generate_service(t_service* tservice) {
   }
 
   f_service_ <<
-    "require File.dirname(__FILE__) + '/" << underscore(program_name_) << "_types'" << endl <<
+    "require '" << underscore(program_name_) << "_types'" << endl <<
     endl;
 
   begin_namespace(f_service_, ruby_modules(tservice->get_program()));
@@ -1081,7 +1102,7 @@ void t_rb_generator::generate_rb_struct_required_validator(std::ofstream& out,
     t_field* field = (*f_iter);
         
     if (field->get_type()->is_enum()){      
-      indent(out) << "unless @" << field->get_name() << ".nil? || " << field->get_type()->get_name() << "::VALID_VALUES.include?(@" << field->get_name() << ")" << endl;      
+      indent(out) << "unless @" << field->get_name() << ".nil? || " << full_type_name(field->get_type()) << "::VALID_VALUES.include?(@" << field->get_name() << ")" << endl;
       indent_up();
       indent(out) << "raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field " << field->get_name() << "!')" << endl;  
       indent_down();

@@ -15,6 +15,10 @@
  * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
+ * Contains some contributions under the Thrift Software License.
+ * Please see doc/old-thrift-license.txt in the Thrift distribution for
+ * details.
  */
 
 #include <string>
@@ -410,7 +414,7 @@ void t_csharp_generator::generate_csharp_struct_definition(ofstream &out, t_stru
   indent(out) << "[Serializable]" << endl;
   bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
  
-  indent(out) << "public " << (is_final ? "sealed " : "") << "class " << tstruct->get_name() << " : ";
+  indent(out) << "public " << (is_final ? "sealed " : "") << "partial class " << tstruct->get_name() << " : ";
 
   if (is_exception) {
     out << "Exception, ";

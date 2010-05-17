@@ -441,23 +441,23 @@ void binary_deserialize(int8_t thrift_typeID, PHPInputTransport& transport, zval
     case T_BYTE: {
       uint8_t c;
       transport.readBytes(&c, 1);
-      RETURN_LONG(c);
+      RETURN_LONG((int8_t)c);
     }
     case T_I16: {
       uint16_t c;
       transport.readBytes(&c, 2);
-      RETURN_LONG(ntohs(c));
+      RETURN_LONG((int16_t)ntohs(c));
     }
     case T_I32: {
       uint32_t c;
       transport.readBytes(&c, 4);
-      RETURN_LONG(ntohl(c));
+      RETURN_LONG((int32_t)ntohl(c));
     }
     case T_U64:
     case T_I64: {
       uint64_t c;
       transport.readBytes(&c, 8);
-      RETURN_LONG(ntohll(c));
+      RETURN_LONG((int64_t)ntohll(c));
     }
     case T_DOUBLE: {
       union {
@@ -716,6 +716,9 @@ void binary_serialize(int8_t thrift_typeID, PHPOutputTransport& transport, zval*
         throw_tprotocolexception("Attempt to send non-object type as a T_STRUCT", INVALID_DATA);
       }
       zval* spec = zend_read_static_property(zend_get_class_entry(*value TSRMLS_CC), "_TSPEC", 6, false TSRMLS_CC);
+      if (Z_TYPE_P(spec) != IS_ARRAY) {
+        throw_tprotocolexception("Attempt to send non-Thrift object as a T_STRUCT", INVALID_DATA);
+      }
       binary_serialize_spec(*value, transport, Z_ARRVAL_P(spec));
     } return;
     case T_BOOL:
@@ -917,6 +920,9 @@ PHP_FUNCTION(thrift_protocol_write_binary) {
     }
 
     zval* spec = zend_read_static_property(zend_get_class_entry(request_struct TSRMLS_CC), "_TSPEC", 6, false TSRMLS_CC);
+    if (Z_TYPE_P(spec) != IS_ARRAY) {
+        throw_tprotocolexception("Attempt to send non-Thrift object", INVALID_DATA);
+    }
     binary_serialize_spec(request_struct, transport, Z_ARRVAL_P(spec));
   } catch (const PHPExceptionWrapper& ex) {
     zend_throw_exception_object(ex TSRMLS_CC);

@@ -42,6 +42,8 @@
  */
 int y_field_val = -1;
 int g_arglist = 0;
+const int struct_is_struct = 0;
+const int struct_is_union = 1;
 
 %}
 
@@ -148,12 +150,14 @@ int g_arglist = 0;
 %token tok_const
 %token tok_required
 %token tok_optional
+%token tok_union
 
 /**
  * Grammar nodes
  */
 
 %type<ttype>     BaseType
+%type<ttype>     SimpleBaseType
 %type<ttype>     ContainerType
 %type<ttype>     SimpleContainerType
 %type<ttype>     MapType
@@ -192,6 +196,7 @@ int g_arglist = 0;
 %type<tconstv>   ConstMap
 %type<tconstv>   ConstMapContents
 
+%type<iconst>    StructHead
 %type<tstruct>   Struct
 %type<tstruct>   Xception
 %type<tservice>  Service
@@ -678,11 +683,22 @@ ConstMapContents:
       $$->set_map();
     }
 
+StructHead:
+  tok_struct
+    {
+      $$ = struct_is_struct;
+    }
+| tok_union
+    {
+      $$ = struct_is_union;
+    }
+
 Struct:
-  tok_struct tok_identifier XsdAll '{' FieldList '}' TypeAnnotations
+  StructHead tok_identifier XsdAll '{' FieldList '}' TypeAnnotations
     {
       pdebug("Struct -> tok_struct tok_identifier { FieldList }");
       $5->set_xsd_all($3);
+      $5->set_union($1 == struct_is_union);
       $$ = $5;
       $$->set_name($2);
       if ($7 != NULL) {
@@ -690,7 +706,7 @@ Struct:
         delete $7;
       }
     }
-
+    
 XsdAll:
   tok_xsd_all
     {
@@ -886,14 +902,7 @@ FieldIdentifier:
 FieldRequiredness:
   tok_required
     {
-      if (g_arglist) {
-        if (g_parse_mode == PROGRAM) {
-          pwarning(1, "required keyword is ignored in argument lists.\n");
-        }
-        $$ = t_field::T_OPT_IN_REQ_OUT;
-      } else {
-        $$ = t_field::T_REQUIRED;
-      }
+      $$ = t_field::T_REQUIRED;
     }
 | tok_optional
     {
@@ -976,7 +985,19 @@ FieldType:
       $$ = $1;
     }
 
-BaseType:
+BaseType: SimpleBaseType TypeAnnotations
+    {
+      pdebug("BaseType -> SimpleBaseType TypeAnnotations");
+      if ($2 != NULL) {
+        $$ = new t_base_type(*static_cast<t_base_type*>($1));
+        $$->annotations_ = $2->annotations_;
+        delete $2;
+      } else {
+        $$ = $1;
+      }
+    }
+
+SimpleBaseType:
   tok_string
     {
       pdebug("BaseType -> tok_string");

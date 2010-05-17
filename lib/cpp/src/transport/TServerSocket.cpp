@@ -18,6 +18,7 @@
  */
 
 #include <cstring>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <sys/types.h>
@@ -26,10 +27,15 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "TSocket.h"
 #include "TServerSocket.h"
 #include <boost/shared_ptr.hpp>
+
+#ifndef AF_LOCAL
+#define AF_LOCAL AF_UNIX
+#endif
 
 namespace apache { namespace thrift { namespace transport {
 

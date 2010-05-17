@@ -44,8 +44,6 @@ if WITH_PERL
 SUBDIRS += perl
 endif
 
-SUBDIRS += php/src/ext/thrift_protocol
-
 # All of the libs that don't use Automake need to go in here
 # so they will end up in our release tarballs.
 EXTRA_DIST = \

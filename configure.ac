@@ -19,7 +19,7 @@
 
 AC_PREREQ(2.59)
 
-AC_INIT([thrift], [20080411])
+AC_INIT([thrift], [0.2.0])
 
 AC_CONFIG_AUX_DIR([.])
 
@@ -70,6 +70,17 @@ AX_THRIFT_LIB(java, [Java], yes)
 if test "$with_java" = "yes";  then
   AX_JAVAC_AND_JAVA
   AC_PATH_PROG([ANT], [ant])
+  AX_CHECK_JAVA_CLASS(org.slf4j.Logger)
+  have_slf4j="$success"
+  AX_CHECK_JAVA_CLASS(org.slf4j.impl.SimpleLogger)
+  have_slf4j_simple="$success"
+  AX_CHECK_JAVA_CLASS(org.apache.commons.lang.builder.HashCodeBuilder)
+  have_hashcode="$success"
+  if test "x$have_slf4j_simple" = "xyes" && test "x$have_slf4j" = "xyes" && test "x$have_hashcode" = "xyes" ; then
+    ANT_FLAGS="$ANT_FLAGS -Dnoivy="
+  fi
+  AC_SUBST(CLASSPATH)
+  AC_SUBST(ANT_FLAGS)
 fi
 AM_CONDITIONAL([WITH_JAVA],
                [test -n "$ANT" -a -n "$JAVA" -a -n "$JAVAC"])
@@ -125,7 +136,13 @@ AC_CHECK_HEADERS([libintl.h])
 AC_CHECK_HEADERS([malloc.h])
 
 AC_CHECK_LIB(pthread, pthread_create)
-AC_CHECK_LIB(rt, sched_get_priority_min)
+dnl NOTE(dreiss): I haven't been able to find any really solid docs
+dnl on what librt is and how it fits into various Unix systems.
+dnl My best guess is that it is where glibc stashes its implementation
+dnl of the POSIX Real-Time Extensions.  This seems necessary on Linux,
+dnl and we haven't yet found a system where this is a problem.
+AC_CHECK_LIB(rt, clock_gettime)
+AC_CHECK_LIB(socket, setsockopt)
 
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
@@ -143,6 +160,16 @@ AC_CHECK_TYPES([ptrdiff_t], [], [exit 1])
 
 AC_STRUCT_TM
 
+dnl NOTE(dreiss): AI_ADDRCONFIG is not defined on OpenBSD.
+AC_CHECK_DECL([AI_ADDRCONFIG], [],
+              [AC_DEFINE([AI_ADDRCONFIG], 0,
+                         [Define if the AI_ADDRCONFIG symbol is unavailable])],
+              [
+  #include <sys/types.h>
+  #include <sys/socket.h>
+  #include <netdb.h>
+])
+
 AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
@@ -154,7 +181,6 @@ AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([strtoul])
 AC_CHECK_FUNCS([bzero])
-AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_FUNCS([ftruncate])
 AC_CHECK_FUNCS([gethostbyname])
 AC_CHECK_FUNCS([gettimeofday])
@@ -170,6 +196,10 @@ AC_CHECK_FUNCS([strerror])
 AC_CHECK_FUNCS([strstr])
 AC_CHECK_FUNCS([strtol])
 AC_CHECK_FUNCS([sqrt])
+dnl The following functions are optional.
+AC_CHECK_FUNCS([clock_gettime])
+AC_CHECK_FUNCS([sched_get_priority_min])
+AC_CHECK_FUNCS([sched_get_priority_max])
 
 AX_SIGNED_RIGHT_SHIFT
 

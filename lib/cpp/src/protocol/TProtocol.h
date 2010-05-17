@@ -86,7 +86,10 @@ using apache::thrift::transport::TTransport;
 #  define __LITTLE_ENDIAN LITTLE_ENDIAN
 #  define __BIG_ENDIAN BIG_ENDIAN
 # else
-#  error "Cannot determine endianness"
+#  include <boost/config.hpp>
+#  define __BYTE_ORDER BOOST_BYTE_ORDER
+#  define __LITTLE_ENDIAN BOOST_LITTLE_ENDIAN
+#  define __BIG_ENDIAN BOOST_BIG_ENDIAN
 # endif
 #endif
 
@@ -107,8 +110,8 @@ using apache::thrift::transport::TTransport;
       | (((n) & 0x0000000000ff0000ull) << 24) \
       | (((n) & 0x000000000000ff00ull) << 40) \
       | (((n) & 0x00000000000000ffull) << 56) )
-#  define ntolell(n) bswap_64(n)
-#  define letonll(n) bswap_64(n)
+#  define htolell(n) bswap_64(n)
+#  define letohll(n) bswap_64(n)
 # endif /* GNUC & GLIBC */
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
 #  define htolell(n) (n)

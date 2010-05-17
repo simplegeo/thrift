@@ -119,6 +119,7 @@ literal_begin (['\"])
 "oneway"             { return tok_oneway;               }
 "typedef"            { return tok_typedef;              }
 "struct"             { return tok_struct;               }
+"union"              { return tok_union;                }
 "exception"          { return tok_xception;             }
 "extends"            { return tok_extends;              }
 "throws"             { return tok_throws;               }
@@ -180,6 +181,7 @@ literal_begin (['\"])
 "private"            { thrift_reserved_keyword(yytext); }
 "protected"          { thrift_reserved_keyword(yytext); }
 "raise"              { thrift_reserved_keyword(yytext); }
+"register"           { thrift_reserved_keyword(yytext); }
 "return"             { thrift_reserved_keyword(yytext); }
 "sizeof"             { thrift_reserved_keyword(yytext); }
 "static"             { thrift_reserved_keyword(yytext); }
@@ -196,7 +198,6 @@ literal_begin (['\"])
 "volatile"           { thrift_reserved_keyword(yytext); }
 "while"              { thrift_reserved_keyword(yytext); }
 "with"               { thrift_reserved_keyword(yytext); }
-"union"              { thrift_reserved_keyword(yytext); }
 "yield"              { thrift_reserved_keyword(yytext); }
 
 {intconstant} {

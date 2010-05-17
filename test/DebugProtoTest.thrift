@@ -251,3 +251,41 @@ struct ReverseOrderStruct {
 service ReverseOrderService {
   void myMethod(4: string first, 3: i16 second, 2: i32 third, 1: i64 fourth);
 }
+
+enum SomeEnum {
+  ONE
+  TWO
+}
+
+union TestUnion {
+  /**
+   * A doc string
+   */
+  1: string string_field;
+  2: i32 i32_field;
+  3: OneOfEach struct_field;
+  4: list<RandomStuff> struct_list;
+  5: i32 other_i32_field;
+  6: SomeEnum enum_field;
+}
+
+union ComparableUnion {
+  1: string string_field;
+  2: binary binary_field;
+}
+
+struct StructWithAUnion {
+  1: TestUnion test_union;
+}
+
+struct PrimitiveThenStruct {
+  1: i32 blah;
+  2: i32 blah2;
+  3: Backwards bw;
+}
+
+typedef map<i32,i32> SomeMap
+
+struct StructWithASomemap {
+  1: required SomeMap somemap_field;
+}
