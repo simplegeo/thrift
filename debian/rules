@@ -180,6 +180,7 @@ binary-indep: build-indep install-indep
 
 # Build architecture dependant packages using the common target.
 binary-arch: build-arch install-arch
+	echo "php:Depends=phpapi-$(php-config5 --phpapi)" > debian/substvars
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
 
 binary: binary-arch binary-indep
