@@ -404,7 +404,7 @@ void t_py_generator::generate_const(t_const* tconst) {
   t_const_value* value = tconst->get_value();
 
   indent(f_consts_) << name << " = " << render_const_value(type, value);
-  f_consts_ << endl << endl;
+  f_consts_ << endl;
 }
 
 /**
@@ -554,7 +554,7 @@ void t_py_generator::generate_py_struct_definition(ofstream& out,
   const vector<t_field*>& sorted_members = tstruct->get_sorted_members();
   vector<t_field*>::const_iterator m_iter;
 
-  out <<
+  out << std::endl <<
     "class " << tstruct->get_name();
   if (is_exception) {
     out << "(Exception)";
@@ -692,8 +692,6 @@ void t_py_generator::generate_py_struct_definition(ofstream& out,
   out <<
     indent() << "return not (self == other)" << endl;
   indent_down();
-  out << endl;
-
   indent_down();
 }
 
@@ -882,7 +880,6 @@ void t_py_generator::generate_service(t_service* tservice) {
   generate_service_remote(tservice);
 
   // Close service file
-  f_service_ << endl;
   f_service_.close();
 }
 
@@ -896,7 +893,7 @@ void t_py_generator::generate_service_helpers(t_service* tservice) {
   vector<t_function*>::iterator f_iter;
 
   f_service_ <<
-    "# HELPER FUNCTIONS AND STRUCTURES" << endl << endl;
+    "# HELPER FUNCTIONS AND STRUCTURES" << endl;
 
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     t_struct* ts = (*f_iter)->get_arglist();
@@ -1319,14 +1316,14 @@ void t_py_generator::generate_service_remote(t_service* tservice) {
     "argi = 1" << endl <<
     endl <<
     "if sys.argv[argi] == '-h':" << endl <<
-    "  parts = sys.argv[argi+1].split(':') " << endl <<
+    "  parts = sys.argv[argi+1].split(':')" << endl <<
     "  host = parts[0]" << endl <<
     "  port = int(parts[1])" << endl <<
     "  argi += 2" << endl <<
     endl <<
     "if sys.argv[argi] == '-u':" << endl <<
     "  url = urlparse(sys.argv[argi+1])" << endl <<
-    "  parts = url[1].split(':') " << endl <<
+    "  parts = url[1].split(':')" << endl <<
     "  host = parts[0]" << endl <<
     "  if len(parts) > 1:" << endl <<
     "    port = int(parts[1])" << endl <<
@@ -1818,7 +1815,7 @@ void t_py_generator::generate_deserialize_container(ofstream &out,
   if (ttype->is_map()) {
     out <<
       indent() << prefix << " = {}" << endl <<
-      indent() << "(" << ktype << ", " << vtype << ", " << size << " ) = iprot.readMapBegin() " << endl;
+      indent() << "(" << ktype << ", " << vtype << ", " << size << " ) = iprot.readMapBegin()" << endl;
   } else if (ttype->is_set()) {
     out <<
       indent() << prefix << " = set()" << endl <<
