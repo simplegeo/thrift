@@ -1,8 +1,9 @@
 thrift (0.2.0-r917130-1) unstable; urgency=low
 
   * New upstream (snapshot) version.
+  * Update standards-version.
 
- -- Ian Eure <ian@simplegeo.com>  Mon, 17 May 2010 15:38:10 -0700
+ -- Ian Eure <ian@simplegeo.com>  Mon, 17 May 2010 15:48:18 -0700
 
 thrift (0.2.0-2) unstable; urgency=low
 

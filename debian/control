@@ -3,7 +3,7 @@ Section: devel
 Priority: extra
 Build-Depends: debhelper (>= 5), build-essential, mono-gmcs, python-dev, ruby1.8-dev, autoconf, python-support, automake, pkg-config, libtool, bison, flex, libboost-dev, python (>= 2.6), python (<< 2.7), python-all-dev, python-all-dbg, ruby, php5, php5-dev, libboost-test-dev, libevent-dev, perl (>= 5.8.0-7), sun-java6-jdk, ant, libslf4j-java
 Maintainer: Esteve Fernandez <esteve@fluidinfo.com>
-Standards-Version: 3.7.2
+Standards-Version: 3.8.4
 XS-Python-Version: 2.6
 
 Package: thrift-compiler
