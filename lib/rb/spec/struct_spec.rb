@@ -62,6 +62,33 @@ class ThriftStructSpec < Spec::ExampleGroup
       Foo.new(:simple => 52).should_not == Foo.new
     end
 
+    it "should print enum value names in inspect" do
+      StructWithSomeEnum.new(:some_enum => SomeEnum::ONE).inspect.should == "<SpecNamespace::StructWithSomeEnum some_enum:ONE (0)>"
+
+      StructWithEnumMap.new(:my_map => {SomeEnum::ONE => [SomeEnum::TWO]}).inspect.should == "<SpecNamespace::StructWithEnumMap my_map:{ONE (0): [TWO (1)]}>"
+    end
+
+    it "should pretty print binary fields" do
+      Foo2.new(:my_binary => "\001\002\003").inspect.should == "<SpecNamespace::Foo2 my_binary:010203>"
+    end
+
+    it "should offer field? methods" do
+      Foo.new.opt_string?.should be_false
+      Foo.new(:simple => 52).simple?.should be_true
+      Foo.new(:my_bool => false).my_bool?.should be_true
+      Foo.new(:my_bool => true).my_bool?.should be_true
+    end
+
+    it "should be comparable" do
+      s1 = StructWithSomeEnum.new(:some_enum => SomeEnum::ONE)
+      s2 = StructWithSomeEnum.new(:some_enum => SomeEnum::TWO)
+
+      (s1 <=> s2).should == -1
+      (s2 <=> s1).should == 1
+      (s1 <=> s1).should == 0
+      (s1 <=> StructWithSomeEnum.new()).should == -1
+    end
+
     it "should read itself off the wire" do
       struct = Foo.new
       prot = BaseProtocol.new(mock("transport"))
@@ -106,6 +133,13 @@ class ThriftStructSpec < Spec::ExampleGroup
       struct.words.should == "apple banana"
       struct.ints.should == [4, 23, 4, 29]
       struct.shorts.should == Set.new([3, 2])
+    end
+
+    it "should serialize false boolean fields correctly" do
+      b = BoolStruct.new(:yesno => false)
+      prot = BinaryProtocol.new(MemoryBufferTransport.new)
+      prot.should_receive(:write_bool).with(false)
+      b.write(prot)
     end
 
     it "should skip unexpected fields in structs and use default values" do

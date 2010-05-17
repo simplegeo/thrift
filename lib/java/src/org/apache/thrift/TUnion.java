@@ -163,7 +163,7 @@ public abstract class TUnion<F extends TFieldIdEnum> implements TBase<F> {
     }
     oprot.writeStructBegin(getStructDesc());
     oprot.writeFieldBegin(getFieldDesc(setField_));
-    writeValue(oprot, setField_, value_);
+    writeValue(oprot);
     oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -185,7 +185,7 @@ public abstract class TUnion<F extends TFieldIdEnum> implements TBase<F> {
    */
   protected abstract Object readValue(TProtocol iprot, TField field) throws TException;
 
-  protected abstract void writeValue(TProtocol oprot, F setField, Object value) throws TException;
+  protected abstract void writeValue(TProtocol oprot) throws TException;
 
   protected abstract TStruct getStructDesc();
 
@@ -195,14 +195,20 @@ public abstract class TUnion<F extends TFieldIdEnum> implements TBase<F> {
 
   @Override
   public String toString() {
-    Object v = getFieldValue();
-    String vStr = null;
-    if (v instanceof byte[]) {
-      vStr = bytesToStr((byte[])v);
-    } else {
-      vStr = v.toString();
+    String result = "<" + this.getClass().getSimpleName() + " ";
+
+    if (getSetField() != null) {
+      Object v = getFieldValue();
+      String vStr = null;
+      if (v instanceof byte[]) {
+        vStr = bytesToStr((byte[])v);
+      } else {
+        vStr = v.toString();
+      }
+      result += getFieldDesc(getSetField()).name + ":" + vStr;
     }
-    return "<" + this.getClass().getSimpleName() + " " + getFieldDesc(getSetField()).name + ":" + vStr + ">";
+
+    return result + ">";
   }
 
   private static String bytesToStr(byte[] bytes) {
@@ -212,7 +218,7 @@ public abstract class TUnion<F extends TFieldIdEnum> implements TBase<F> {
       if (i != 0) {
         sb.append(" ");
       }
-      String digit = Integer.toHexString(bytes[i]);
+      String digit = Integer.toHexString(bytes[i] & 0xFF);
       sb.append(digit.length() > 1 ? digit : "0" + digit);
     }
     if (bytes.length > 128) {
