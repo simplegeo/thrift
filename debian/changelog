@@ -1,3 +1,9 @@
+thrift (0.2.0-r917130-1) unstable; urgency=low
+
+  * New upstream (snapshot) version.
+
+ -- Ian Eure <ian@simplegeo.com>  Mon, 17 May 2010 15:38:10 -0700
+
 thrift (0.2.0-2) unstable; urgency=low
 
   * Fix whitespace in generated code.
@@ -39,3 +45,7 @@ thrift (0.2008.12.30~8.04) hardy; urgency=low
   * Initial release.
 
  -- Esteve Fernandez <esteve@fluidinfo.com>  Thu, 15 Jan 2009 11:34:24 +0100
+
+Local Variables:
+debian-changelog-mailing-address:"ian@simplegeo.com"
+End:
