@@ -214,6 +214,17 @@ const CompactProtoTestStruct COMPACT_TEST = {
 }
 
 
+const i32 MYCONST = 2
+
+
+exception ExceptionWithAMap {
+  1: string blah;
+  2: map<string, string> map_field;
+}
+
+service ServiceForExceptionWithAMap {
+  void methodThatThrowsAnException() throws (1: ExceptionWithAMap xwamap);
+}
 
 service Srv {
   i32 Janky(1: i32 arg);
@@ -223,6 +234,8 @@ service Srv {
   void voidMethod();
   i32 primitiveMethod();
   CompactProtoTestStruct structMethod();
+  
+  void methodWithDefaultArgs(1: i32 something = MYCONST);
 }
 
 service Inherited extends Srv {
@@ -253,8 +266,25 @@ service ReverseOrderService {
 }
 
 enum SomeEnum {
-  ONE
-  TWO
+  ONE = 1
+  TWO = 2
+}
+
+const SomeEnum MY_SOME_ENUM = ONE
+
+const SomeEnum MY_SOME_ENUM_1 = 1
+/*const SomeEnum MY_SOME_ENUM_2 = 7*/
+
+const map<SomeEnum,SomeEnum> MY_ENUM_MAP = {
+  ONE : TWO
+}
+
+struct StructWithSomeEnum {
+  1: SomeEnum blah;
+}
+
+const map<SomeEnum,StructWithSomeEnum> EXTRA_CRAZY_MAP = {
+  ONE : {"blah" : TWO}
 }
 
 union TestUnion {
@@ -262,6 +292,14 @@ union TestUnion {
    * A doc string
    */
   1: string string_field;
+  2: i32 i32_field;
+  3: OneOfEach struct_field;
+  4: list<RandomStuff> struct_list;
+  5: i32 other_i32_field;
+  6: SomeEnum enum_field;
+}
+
+union TestUnionMinusStringField {
   2: i32 i32_field;
   3: OneOfEach struct_field;
   4: list<RandomStuff> struct_list;
@@ -288,4 +326,15 @@ typedef map<i32,i32> SomeMap
 
 struct StructWithASomemap {
   1: required SomeMap somemap_field;
+}
+
+struct BigFieldIdStruct {
+  1: string field1;
+  45: string field2;
+}
+
+struct BreaksRubyCompactProtocol {
+  1: string field1;
+  2: BigFieldIdStruct field2;
+  3: i32 field3;
 }

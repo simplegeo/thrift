@@ -652,7 +652,7 @@ void usage() {
  * wouldn't need runtime type information and all that jazz. But then we
  * decided to add constants, and all of a sudden that means runtime type
  * validation and inference, except the "runtime" is the code generator
- * runtime. Shit. I've been had.
+ * runtime.
  */
 void validate_const_rec(std::string name, t_type* type, t_const_value* value) {
   if (type->is_void()) {
@@ -702,8 +702,23 @@ void validate_const_rec(std::string name, t_type* type, t_const_value* value) {
       throw "compiler error: no const of base type " + t_base_type::t_base_name(tbase) + name;
     }
   } else if (type->is_enum()) {
-    if (value->get_type() != t_const_value::CV_INTEGER) {
+    if (value->get_type() != t_const_value::CV_IDENTIFIER) {
       throw "type error: const \"" + name + "\" was declared as enum";
+    }
+
+    const vector<t_enum_value*>& enum_values = ((t_enum*)type)->get_constants();
+    vector<t_enum_value*>::const_iterator c_iter;
+    bool found = false;
+    for (c_iter = enum_values.begin(); c_iter != enum_values.end(); ++c_iter) {
+      if ((*c_iter)->get_name() == value->get_identifier()) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw "type error: const " + name + " was declared as type " 
+        + type->get_name() + " which is an enum, but " 
+        + value->get_identifier() + " is not a valid value for that enum";
     }
   } else if (type->is_struct() || type->is_xception()) {
     if (value->get_type() != t_const_value::CV_MAP) {

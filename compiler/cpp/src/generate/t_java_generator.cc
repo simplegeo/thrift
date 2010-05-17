@@ -367,11 +367,11 @@ void t_java_generator::generate_enum(t_enum* tenum) {
   f_enum << string() +
     "import java.util.Map;\n" + 
     "import java.util.HashMap;\n" +
-    "import org.apache.thrift.TEnum;" << endl;
+    "import org.apache.thrift.TEnum;" << endl << endl;
 
   generate_java_doc(f_enum, tenum);
   indent(f_enum) <<
-    "public enum " << tenum->get_name() << " implements TEnum";
+    "public enum " << tenum->get_name() << " implements TEnum ";
   scope_up(f_enum);
 
   vector<t_enum_value*> constants = tenum->get_constants();
@@ -392,18 +392,9 @@ void t_java_generator::generate_enum(t_enum* tenum) {
     }
 
     generate_java_doc(f_enum, *c_iter);
-    indent(f_enum) << "  " << (*c_iter)->get_name() << "(" << value << ")";
+    indent(f_enum) << (*c_iter)->get_name() << "(" << value << ")";
   }
   f_enum << ";" << endl << endl;
-
-  indent(f_enum) << "private static final Map<Integer, "+ tenum->get_name() +
-    "> BY_VALUE = new HashMap<Integer,"+ tenum->get_name() +">() {{" << endl;
-  indent(f_enum) << "  for("+ tenum->get_name() +" val : "+ tenum->get_name() +".values()) {" << endl;
-  indent(f_enum) << "    put(val.getValue(), val);" << endl;
-  indent(f_enum) << "  }" << endl;
-  indent(f_enum) << "}};" << endl;
-
-  f_enum << endl;
 
   // Field for thriftCode
   indent(f_enum) << "private final int value;" << endl << endl;
@@ -411,7 +402,7 @@ void t_java_generator::generate_enum(t_enum* tenum) {
   indent(f_enum) << "private " << tenum->get_name() << "(int value) {" << endl;
   indent(f_enum) << "  this.value = value;" <<endl;
   indent(f_enum) << "}" << endl << endl;
- 
+
   indent(f_enum) << "/**" << endl;
   indent(f_enum) << " * Get the integer value of this enum value, as defined in the Thrift IDL." << endl;
   indent(f_enum) << " */" << endl;
@@ -424,7 +415,34 @@ void t_java_generator::generate_enum(t_enum* tenum) {
   indent(f_enum) << " * @return null if the value is not found." << endl;
   indent(f_enum) << " */" << endl;
   indent(f_enum) << "public static "+ tenum->get_name() + " findByValue(int value) { " << endl;
-  indent(f_enum) << "  return BY_VALUE.get(value);" << endl;
+
+  indent_up();
+
+  indent(f_enum) << "switch (value) {" << endl;
+  indent_up();
+
+  value = -1;
+
+  for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
+    if ((*c_iter)->has_value()) {
+      value = (*c_iter)->get_value();
+    } else {
+      ++value;
+    }
+
+    indent(f_enum) << "case " << value << ":" << endl;
+    indent(f_enum) << "  return " << (*c_iter)->get_name() << ";" << endl;
+  }
+  
+  indent(f_enum) << "default:" << endl;
+  indent(f_enum) << "  return null;" << endl;  
+
+  indent_down();
+
+  indent(f_enum) << "}" << endl;
+  
+  indent_down();
+
   indent(f_enum) << "}" << endl;
 
   scope_down(f_enum);
@@ -487,7 +505,7 @@ void t_java_generator::print_const_value(std::ofstream& out, string name, t_type
     string v2 = render_const_value(out, name, type, value);
     out << name << " = " << v2 << ";" << endl << endl;
   } else if (type->is_enum()) {
-    out << name << " = " << value->get_integer() << ";" << endl << endl;
+    out << name << " = " << render_const_value(out, name, type, value) << ";" << endl << endl;
   } else if (type->is_struct() || type->is_xception()) {
     const vector<t_field*>& fields = ((t_struct*)type)->get_members();
     vector<t_field*>::const_iterator f_iter;
@@ -602,7 +620,7 @@ string t_java_generator::render_const_value(ofstream& out, string name, t_type* 
       throw "compiler error: no const of base type " + t_base_type::t_base_name(tbase);
     }
   } else if (type->is_enum()) {
-    render << value->get_integer();
+    render << type_name(type, false, false) << "." << value->get_identifier();
   } else {
     string t = tmp("tmp");
     print_const_value(out, t, type, value, true);
@@ -850,7 +868,10 @@ void t_java_generator::generate_read_value(ofstream& out, t_struct* tstruct) {
 
   indent_up();
 
-  indent(out) << "switch (_Fields.findByThriftId(field.id)) {" << endl;
+  indent(out) << "_Fields setField = _Fields.findByThriftId(field.id);" << endl;
+  indent(out) << "if (setField != null) {" << endl;
+  indent_up();
+  indent(out) << "switch (setField) {" << endl;
   indent_up();
 
   const vector<t_field*>& members = tstruct->get_members();
@@ -873,11 +894,18 @@ void t_java_generator::generate_read_value(ofstream& out, t_struct* tstruct) {
     indent(out) << "}" << endl;
     indent_down();
   }
-  
-  indent(out) << "default:" << endl;
-  indent(out) << "  TProtocolUtil.skip(iprot, field.type);" << endl;
-  indent(out) << "  return null;" << endl;
 
+  indent(out) << "default:" << endl;
+  indent(out) << "  throw new IllegalStateException(\"setField wasn't null, but didn't match any of the case statements!\");" << endl;
+
+  indent_down();
+  indent(out) << "}" << endl;
+
+  indent_down();
+  indent(out) << "} else {" << endl;
+  indent_up();
+  indent(out) << "TProtocolUtil.skip(iprot, field.type);" << endl;
+  indent(out) << "return null;" << endl;
   indent_down();
   indent(out) << "}" << endl;
 
@@ -887,11 +915,11 @@ void t_java_generator::generate_read_value(ofstream& out, t_struct* tstruct) {
 
 void t_java_generator::generate_write_value(ofstream& out, t_struct* tstruct) {
   indent(out) << "@Override" << endl;
-  indent(out) << "protected void writeValue(TProtocol oprot, _Fields setField, Object value) throws TException {" << endl;
+  indent(out) << "protected void writeValue(TProtocol oprot) throws TException {" << endl;
 
   indent_up();
 
-  indent(out) << "switch (setField) {" << endl;
+  indent(out) << "switch (setField_) {" << endl;
   indent_up();
 
   const vector<t_field*>& members = tstruct->get_members();
@@ -903,14 +931,14 @@ void t_java_generator::generate_write_value(ofstream& out, t_struct* tstruct) {
     indent(out) << "case " << constant_name(field->get_name()) << ":" << endl;
     indent_up();
     indent(out) << type_name(field->get_type(), true, false) << " " << field->get_name() 
-      << " = (" <<  type_name(field->get_type(), true, false) << ")getFieldValue();" << endl;
+      << " = (" <<  type_name(field->get_type(), true, false) << ")value_;" << endl;
     generate_serialize_field(out, field, "");
     indent(out) << "return;" << endl;
     indent_down();
   }
   
   indent(out) << "default:" << endl;
-  indent(out) << "  throw new IllegalStateException(\"Cannot write union with unknown field \" + setField);" << endl;
+  indent(out) << "  throw new IllegalStateException(\"Cannot write union with unknown field \" + setField_);" << endl;
 
   indent_down();
   indent(out) << "}" << endl;
@@ -996,7 +1024,19 @@ void t_java_generator::generate_union_hashcode(ofstream& out, t_struct* tstruct)
   if (gen_hash_code_) {
     indent(out) << "@Override" << endl;
     indent(out) << "public int hashCode() {" << endl;
-    indent(out) << "  return new HashCodeBuilder().append(getSetField().getThriftFieldId()).append((getFieldValue() instanceof TEnum) ? ((TEnum)getFieldValue()).getValue() : getFieldValue()).toHashCode();" << endl;
+    indent(out) << "  HashCodeBuilder hcb = new HashCodeBuilder();" << endl;
+    indent(out) << "  hcb.append(this.getClass().getName());" << endl;
+    indent(out) << "  TFieldIdEnum setField = getSetField();" << endl;
+    indent(out) << "  if (setField != null) {" << endl;
+    indent(out) << "    hcb.append(setField.getThriftFieldId());" << endl;
+    indent(out) << "    Object value = getFieldValue();" << endl;
+    indent(out) << "    if (value instanceof TEnum) {" << endl;
+    indent(out) << "      hcb.append(((TEnum)getFieldValue()).getValue());" << endl;
+    indent(out) << "    } else {" << endl;
+    indent(out) << "      hcb.append(value);" << endl;
+    indent(out) << "    }" << endl;
+    indent(out) << "  }" << endl;
+    indent(out) << "  return hcb.toHashCode();" << endl;
     indent(out) << "}";
   } else {
     indent(out) << "/**" << endl;
@@ -1352,14 +1392,16 @@ void t_java_generator::generate_java_struct_compare_to(ofstream& out, t_struct* 
   vector<t_field*>::const_iterator m_iter;
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
     t_field* field = *m_iter;
-    indent(out) << "lastComparison = Boolean.valueOf(" << generate_isset_check(field) << ").compareTo(" << generate_isset_check(field) << ");" << endl;
+    indent(out) << "lastComparison = Boolean.valueOf(" << generate_isset_check(field) << ").compareTo(typedOther." << generate_isset_check(field) << ");" << endl;
     indent(out) << "if (lastComparison != 0) {" << endl;
     indent(out) << "  return lastComparison;" << endl;
     indent(out) << "}" << endl;
 
-    indent(out) << "lastComparison = TBaseHelper.compareTo(" << field->get_name() << ", typedOther." << field->get_name() << ");" << endl;
-    indent(out) << "if (lastComparison != 0) {" << endl;
-    indent(out) << "  return lastComparison;" << endl;
+    indent(out) << "if (" << generate_isset_check(field) << ") {";
+    indent(out) << "  lastComparison = TBaseHelper.compareTo(" << field->get_name() << ", typedOther." << field->get_name() << ");" << endl;
+    indent(out) << "  if (lastComparison != 0) {" << endl;
+    indent(out) << "    return lastComparison;" << endl;
+    indent(out) << "  }" << endl;
     indent(out) << "}" << endl;
   }
 
@@ -1408,20 +1450,14 @@ void t_java_generator::generate_java_struct_reader(ofstream& out,
       "}" << endl;
 
     // Switch statement on the field we are reading
-    indent(out) << "_Fields fieldId = _Fields.findByThriftId(field.id);" << endl;
-    indent(out) << "if (fieldId == null) {" << endl;
-    indent(out) << "  TProtocolUtil.skip(iprot, field.type);" << endl;
-    indent(out) << "} else {" << endl;
-    indent_up();
-
-    indent(out) << "switch (fieldId) {" << endl;
+    indent(out) << "switch (field.id) {" << endl;
 
     indent_up();
 
     // Generate deserialization code for known cases
     for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
       indent(out) <<
-        "case " << constant_name((*f_iter)->get_name()) << ":" << endl;
+        "case " << (*f_iter)->get_key() << ": // " << constant_name((*f_iter)->get_name()) << endl;
       indent_up();
       indent(out) <<
         "if (field.type == " << type_to_enum((*f_iter)->get_type()) << ") {" << endl;
@@ -1438,14 +1474,15 @@ void t_java_generator::generate_java_struct_reader(ofstream& out,
       indent_down();
     }
 
+    indent(out) << "default:" << endl;
+    indent(out) << "  TProtocolUtil.skip(iprot, field.type);" << endl;
+
     indent_down();
     indent(out) << "}" << endl;
 
     // Read field end marker
     indent(out) <<
       "iprot.readFieldEnd();" << endl;
-
-    scope_down(out);
 
     indent_down();
     indent(out) << "}" << endl;
@@ -1933,16 +1970,6 @@ void t_java_generator::generate_java_struct_tostring(ofstream& out,
       indent(out) << "    sb.append(Integer.toHexString(this." << field->get_name() << "[i]).length() > 1 ? Integer.toHexString(this." << field->get_name() << "[i]).substring(Integer.toHexString(this." << field->get_name() << "[i]).length() - 2).toUpperCase() : \"0\" + Integer.toHexString(this." << field->get_name() << "[i]).toUpperCase());" <<endl;
       indent(out) << "  }" << endl;
       indent(out) << "  if (this." << field->get_name() << ".length > 128) sb.append(\" ...\");" << endl;
-    } else if(field->get_type()->is_enum()) {
-      indent(out) << "String " << field->get_name() << "_name = " << field->get_name() << ".name();"<< endl;
-      indent(out) << "if (" << field->get_name() << "_name != null) {" << endl;
-      indent(out) << "  sb.append(" << field->get_name() << "_name);" << endl;
-      indent(out) << "  sb.append(\" (\");" << endl;
-      indent(out) << "}" << endl;
-      indent(out) << "sb.append(this." << field->get_name() << ");" << endl;
-      indent(out) << "if (" << field->get_name() << "_name != null) {" << endl;
-      indent(out) << "  sb.append(\")\");" << endl;
-      indent(out) << "}" << endl;
     } else {
       indent(out) << "sb.append(this." << (*f_iter)->get_name() << ");" << endl;
     }
@@ -2511,7 +2538,25 @@ void t_java_generator::generate_process_function(t_service* tservice,
 
   f_service_ <<
     indent() << argsname << " args = new " << argsname << "();" << endl <<
-    indent() << "args.read(iprot);" << endl <<
+    indent() << "try {" << endl;
+  indent_up();
+  f_service_ <<
+    indent() << "args.read(iprot);" << endl;
+  indent_down();
+  f_service_ << 
+    indent() << "} catch (TProtocolException e) {" << endl;
+  indent_up();
+  f_service_ <<
+    indent() << "iprot.readMessageEnd();" << endl <<
+    indent() << "TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());" << endl <<
+    indent() << "oprot.writeMessageBegin(new TMessage(\"" << tfunction->get_name() << "\", TMessageType.EXCEPTION, seqid));" << endl <<
+    indent() << "x.write(oprot);" << endl <<
+    indent() << "oprot.writeMessageEnd();" << endl <<
+    indent() << "oprot.getTransport().flush();" << endl <<
+    indent() << "return;" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl;
+  f_service_ <<
     indent() << "iprot.readMessageEnd();" << endl;
 
   t_struct* xs = tfunction->get_xceptions();
@@ -3580,7 +3625,7 @@ bool t_java_generator::is_comparable(t_type* type) {
     } else {
       return false;
     }
-  } else if (type->is_struct()) {
+  } else if (type->is_struct() || type->is_xception()) {
     return is_comparable((t_struct*)type);
   } else {
     return true;
