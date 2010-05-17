@@ -1,0 +1,35 @@
+thrift (0.2.0-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Ian Eure <ian@simplegeo.com>  Mon, 17 May 2010 12:30:55 -0700
+
+thrift (0.2009.04.13-digg4) stable; urgency=low
+
+  * Make public package 
+
+ -- Jeremy Grosser <synack@digg.com>  Fri, 30 Oct 2009 15:22:57 -0700
+
+thrift (0.2009.04.13-digg3) stable; urgency=low
+
+  * Add java support 
+
+ -- Jeremy Grosser <synack@digg.com>  Fri, 22 May 2009 17:22:44 +0000
+
+thrift (0.2009.04.13-digg2) stable; urgency=low
+
+  * Version bump for repo import
+
+ -- Jeremy Grosser <synack@digg.com>  Wed, 06 May 2009 19:52:30 +0000
+
+thrift (0.2009.04.13-digg1) unstable; urgency=low
+
+  * Initial release for digg 
+
+ -- Chris Goffinet <goffinet@digg.com>  Wed, 28 May 2008 15:58:02 -0700
+
+thrift (0.2008.12.30~8.04) hardy; urgency=low
+
+  * Initial release.
+
+ -- Esteve Fernandez <esteve@fluidinfo.com>  Thu, 15 Jan 2009 11:34:24 +0100
